@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubSlash India – AI Dark Pattern Detector</title>
+<meta name="description" content="Describe what an app did to you and SubSlash flags the dark patterns under India’s CCPA 2023 guidelines.">
+<style>
+:root{
+  --bg:#0a0820;
+  --hero-a:#1e1b4b;
+  --hero-b:#2e1065;
+  --card:#14122e;
+  --card-line:#2a2550;
+  --field:#0a0820;
+  --purple:#a78bfa;
+  --purple-deep:#7c3aed;
+  --red:#dc2626;
+  --amber:#f59e0b;
+  --green:#34d399;
+  --text:#f1f0ff;
+  --muted:#a09cc4;
+  --chip:#2b1f6b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.55;
+}
+.wrap{max-width:960px;margin:0 auto;padding:32px 18px 60px}
+
+/* hero */
+.hero{
+  text-align:center;padding:36px 20px 32px;border-radius:24px;
+  background:linear-gradient(135deg,var(--hero-a),var(--hero-b));
+  border:1px solid var(--card-line);
+}
+.hero h1{margin:0;font-size:clamp(2rem,6vw,3.2rem);font-weight:800;letter-spacing:-.01em}
+.hero .sub{margin:8px 0 18px;color:var(--purple);font-size:1.25rem}
+.badge{
+  display:inline-block;background:var(--red);color:#fff;font-weight:700;font-size:.95rem;
+  padding:7px 22px;border-radius:999px;
+}
+
+/* cards */
+.card{
+  margin-top:32px;background:var(--card);border:1px solid var(--card-line);
+  border-radius:20px;padding:26px;
+}
+.card label,.card h2{
+  display:block;margin:0 0 12px;color:var(--purple);font-size:1.15rem;font-weight:700;
+}
+textarea{
+  width:100%;min-height:200px;resize:vertical;
+  background:var(--field);color:var(--text);
+  border:2px solid #4a3a9c;border-radius:14px;padding:18px 22px;
+  font:inherit;font-size:1.02rem;
+}
+textarea::placeholder{color:#7d79a6}
+textarea:focus{outline:none;border-color:var(--purple)}
+.go{
+  width:100%;margin-top:20px;padding:18px;border:0;border-radius:14px;cursor:pointer;
+  color:#fff;font:inherit;font-size:1.15rem;font-weight:700;
+  background:linear-gradient(90deg,var(--purple-deep),var(--red));
+}
+.go:hover{filter:brightness(1.1)}
+.go:disabled{opacity:.65;cursor:wait}
+.go:focus-visible,.chip:focus-visible,textarea:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+/* examples */
+.chips{display:flex;flex-wrap:wrap;gap:14px}
+.chip{
+  font:inherit;font-weight:700;font-size:1rem;color:var(--text);cursor:pointer;
+  background:var(--chip);border:1px solid #3d2f8f;border-radius:999px;padding:13px 24px;
+}
+.chip:hover{background:#3a2a8a}
+
+/* key box */
+details.keybox{margin-top:18px;color:var(--muted);font-size:.92rem}
+details.keybox summary{cursor:pointer}
+details.keybox input{
+  width:100%;margin-top:10px;padding:12px 14px;border-radius:10px;
+  background:var(--field);color:var(--text);border:1px solid var(--card-line);font:inherit;
+}
+
+/* results */
+#results{margin-top:32px}
+.notice{
+  background:#3a1216;border:1px solid #7f1d1d;color:#fecaca;
+  border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:.93rem;
+}
+.verdict{display:flex;gap:20px;align-items:center;margin-bottom:6px}
+.score{
+  flex:none;width:104px;height:104px;border-radius:50%;
+  border:7px solid var(--c);color:var(--c);
+  display:grid;place-items:center;text-align:center;
+  font-size:2.2rem;font-weight:800;line-height:1;
+}
+.score small{display:block;margin-top:4px;font-size:.66rem;font-weight:600;color:var(--muted)}
+.verdict h3{margin:0;font-size:1.5rem;color:var(--text)}
+.verdict p{margin:6px 0 0;color:var(--muted)}
+.source{margin:12px 0 4px;font-size:.82rem;color:var(--muted)}
+.finding{
+  margin-top:14px;padding:16px 18px;background:#1b1840;
+  border:1px solid var(--card-line);border-left:6px solid var(--c);border-radius:14px;
+}
+.finding h4{margin:0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:1.1rem}
+.finding .ref{font-size:.8rem;font-weight:600;color:var(--muted)}
+.finding blockquote{margin:12px 0;padding:10px 14px;background:var(--field);border-radius:10px;font-size:.95rem;color:#d8d5f5}
+.finding p{margin:8px 0;font-size:.95rem}
+.finding .fix strong{color:var(--green)}
+
+.spinner{
+  display:inline-block;width:18px;height:18px;margin-right:10px;vertical-align:-3px;
+  border:3px solid #ffffff55;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation-duration:3s}}
+
+/* analysing animation */
+.loader{text-align:center}
+.loader .msg{min-height:1.9em;font-size:1.2rem;font-weight:700;color:var(--purple);transition:opacity .25s}
+.bar{height:10px;margin:16px 0 22px;border-radius:999px;background:var(--field);border:1px solid var(--card-line);overflow:hidden}
+.bar span{
+  display:block;height:100%;width:0;border-radius:999px;transition:width .3s;
+  background:linear-gradient(90deg,var(--purple-deep),var(--red),var(--purple-deep));
+  background-size:200% 100%;animation:slide 1.2s linear infinite;
+}
+@keyframes slide{to{background-position:-200% 0}}
+.pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pill{
+  padding:6px 14px;border-radius:999px;font-size:.85rem;font-weight:600;
+  color:var(--muted);background:#1b1840;border:1px solid var(--card-line);transition:all .3s;
+}
+.pill.on{color:#fff;background:var(--chip);border-color:var(--purple);box-shadow:0 0 12px #7c3aed88}
+.pill.on::before{content:"✓ ";color:var(--green)}
+.loader .tip{margin:18px 0 0;font-size:.85rem;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.bar span{animation:none}}
+
+footer{margin-top:34px;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:560px){
+  .card{padding:18px}
+  .verdict{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>⚔️ SubSlash India</h1>
+    <p class="sub">India’s AI-Powered Dark Pattern Detector</p>
+    <span class="badge">Based on CCPA 2023 — 13 Official Dark Patterns</span>
+  </header>
+
+  <section class="card">
+    <label for="input">Describe what the app did to you:</label>
+    <textarea id="input" placeholder="Example: Zomato added a donation to my cart without asking. After clicking free trial, Hotstar charged me Rs.299 without any reminder..."></textarea>
+    <button type="button" class="go" id="analyze">🔍 Analyze for Dark Patterns</button>
+
+    <details class="keybox" id="keybox" hidden>
+      <summary>Add your OpenRouter key</summary>
+      <input type="password" id="keyInput" placeholder="sk-or-..." autocomplete="off" aria-label="OpenRouter API key">
+      <p style="margin:8px 0 0">Saved only in this browser. Until you add one, SubSlash uses its built-in rule check.</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Try these examples:</h2>
+    <div class="chips">
+      <button type="button" class="chip" data-example="basket">🛒 Basket Sneaking</button>
+      <button type="button" class="chip" data-example="subscription">🔒 Subscription Trap</button>
+      <button type="button" class="chip" data-example="drip">💸 Drip Pricing</button>
+      <button type="button" class="chip" data-example="urgency">⏰ False Urgency</button>
+      <button type="button" class="chip" data-example="shaming">😔 Confirm Shaming</button>
+    </div>
+  </section>
+
+  <section id="results" aria-live="polite"></section>
+
+  <footer>SubSlash India is a decision aid, not legal advice. Patterns are mapped to the Guidelines for Prevention and Regulation of Dark Patterns, 2023 (CCPA).</footer>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+// Paste your OpenRouter key between the quotes (starts with sk-or-).
+// Do NOT push your real key to GitHub – keep the placeholder in the repo.
+var API_KEY = "PASTE_YOUR_KEY_HERE";
+var MODELS = [
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "openrouter/free"
+];
+var API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+/* ============ CCPA 2023 PATTERNS ============ */
+var PATTERNS = {
+  "False Urgency":          { n: 1,  sev: "medium" },
+  "Basket Sneaking":        { n: 2,  sev: "high" },
+  "Confirm Shaming":        { n: 3,  sev: "medium" },
+  "Forced Action":          { n: 4,  sev: "high" },
+  "Subscription Trap":      { n: 5,  sev: "high" },
+  "Interface Interference": { n: 6,  sev: "medium" },
+  "Bait and Switch":        { n: 7,  sev: "high" },
+  "Drip Pricing":           { n: 8,  sev: "high" },
+  "Disguised Advertisement":{ n: 9,  sev: "medium" },
+  "Nagging":                { n: 10, sev: "low" },
+  "Trick Question":         { n: 11, sev: "medium" },
+  "SaaS Billing":           { n: 12, sev: "high" },
+  "Rogue Malwares":         { n: 13, sev: "high" }
+};
+
+/* ============ EXAMPLES ============ */
+var EXAMPLES = {
+  basket:
+    "Zomato added a donation of ₹10 to my cart without asking me. I only noticed it on the final payment screen, and it was pre-selected so I had to find the tiny box to remove it.",
+  subscription:
+    "After clicking free trial, Hotstar charged me ₹299 without any reminder. When I tried to cancel, the app said I must call customer care, and there was no cancel option anywhere in settings.",
+  drip:
+    "A flight showed ₹4,299 in the search results, but at the final payment step a convenience fee and a payment handling fee were added and the total became ₹5,100.",
+  urgency:
+    "The hotel site kept showing “Only 2 rooms left! 14 people are viewing this now” and a countdown timer that reset every time I refreshed the page.",
+  shaming:
+    "To decline the insurance add-on, the only button said “No thanks, I don’t care about my family’s safety”, and the accept button was big and green."
+};
+
+/* ============ HELPERS ============ */
+function $(id){ return document.getElementById(id); }
+
+function esc(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function sevColor(sev){
+  return sev === "high" ? "var(--red)" : sev === "medium" ? "var(--amber)" : "var(--purple)";
+}
+
+// Global on purpose, in case any markup calls onclick="fillExample('basket')"
+function fillExample(key){
+  var t = EXAMPLES[key];
+  if(!t) return;
+  $("input").value = t;
+  $("input").focus();
+}
+window.fillExample = fillExample;
+
+function getKey(){
+  if(API_KEY && API_KEY.indexOf("PASTE_YOUR_KEY") === -1) return API_KEY;
+  try { return localStorage.getItem("subslash_key") || ""; } catch(e){ return ""; }
+}
+
+/* ============ OFFLINE RULE CHECK (safety net) ============ */
+var RULES = [
+  ["False Urgency",
+    /only \d+ (seats?|rooms?|items?|left|remaining)|\d+ (people|others|users) (are )?(viewing|watching|looking)|hurry|limited time|offer ends|ends (in|today|soon)|selling fast|last chance|countdown|timer|lose (this|the) (fare|deal|offer)|running out/i,
+    "Pressure to buy immediately, with scarcity or a deadline that may not be genuine.",
+    "Show stock or timers only when they are real and verifiable, and keep the price after the timer ends."],
+  ["Confirm Shaming",
+    /no,? (thanks|thank you),? i|i don.?t care about|i don.?t want to (save|be|get|miss)|made me feel (guilty|bad|stupid)|i('| wi)ll pay full price|shame/i,
+    "The decline option is worded to make the user feel guilty or foolish for saying no.",
+    "Use neutral labels such as “Yes, add it” and “No, thanks”."],
+  ["Subscription Trap",
+    /auto-?renew|(couldn.?t|could not|can.?t|cannot|unable to|hard to|difficult to|no option to|no way to) cancel|no cancel option|cancel(lation)? (only )?(by|via|through) (calling|phone|email|contacting)|must call|call (customer care|support)|charged me[^.]*(without|no) (any )?(reminder|notice|warning)|free trial[^.]*(charged|billed)/i,
+    "Signing up is easy but cancelling is hard or hidden, or the user is charged after a trial without a clear warning.",
+    "Offer one-tap cancellation in the same place and channel as sign-up, and show the renewal price and date clearly up front."],
+  ["Drip Pricing",
+    /(convenience|handling|platform|service|processing|hidden) (fees?|charges?)|(fees?|charges?|taxes)[^.]*(final|last) (payment )?(step|screen|page)|(fees?|charges?)[^.]*(added|appeared)[^.]*(checkout|payment)|total (became|went up|increased)|extra charges?/i,
+    "Extra fees show up late in the flow, so the headline price looks lower than what is actually charged.",
+    "Show the full payable amount, with all mandatory fees and taxes, from the first price display."],
+  ["Basket Sneaking",
+    /pre-?(selected|checked|ticked)|added[^.]*(to )?(my |your )?(cart|basket|order)[^.]*(without|automatically|by default)|without (asking|my (consent|permission|knowledge))|(donation|insurance|add-?on|protection plan)[^.]*(added|included|selected)[^.]*(automatically|by default|without)|snuck|sneaked/i,
+    "Items or payments are added to the order without the user explicitly choosing them.",
+    "Leave add-ons unticked and let users opt in with a clear, separate choice."],
+  ["Forced Action",
+    /you must (create|sign|register|subscribe|share|allow)|forced me to|required to (install|download|create|share|allow)|had to (create an account|sign up|share|allow)|to continue,? (you must|please) (sign|register|allow|create)/i,
+    "The user must do something unrelated, like sharing contacts or creating an account, to get what they came for.",
+    "Ask only for the data and steps the purchase needs, and make everything else optional."],
+  ["Interface Interference",
+    /tiny (box|button|text|link|x)|hidden (button|option|link)|(hard|difficult) to find|buried (in|under)|couldn.?t find (the )?(close|skip|cancel|unsubscribe)|greyed? out|grayed? out/i,
+    "Important options are made hard to see or find, while the option the business prefers is made prominent.",
+    "Give accept and decline options equal size, contrast and position."],
+  ["Trick Question",
+    /untick[^.]*(not|opt)[^.]*(not|receive)|do not (want )?to not|double negative|confusing(ly)? worded|uncheck[^.]*if you (do not|don.?t)/i,
+    "Double negatives or confusing wording push users to choose the opposite of what they intend.",
+    "Use plain, single-meaning wording such as “Send me offers”."],
+  ["Disguised Advertisement",
+    /sponsored|promoted (listing|result)|looked like (a )?(regular|normal|organic)|disguised (as )?(an )?ad/i,
+    "Paid placement is styled like organic content or is not clearly labelled as an ad.",
+    "Label ads clearly and visibly, and style them differently from organic results."],
+  ["Bait and Switch",
+    /price (may|can|will|had|has) (change|changed) at (checkout|payment)|advertised (price|offer)[^.]*(not|n.?t) (available|valid|honou?red)|(offer|deal) (was )?(not|un)available at checkout|bait and switch/i,
+    "The advertised offer or price is not what the user can actually get at checkout.",
+    "Honour the advertised price and offer through payment, or remove the advert."],
+  ["Nagging",
+    /kept (asking|showing|popping)|keeps? (asking|popping)|repeated(ly)? (asked|prompt|pop)|pop-?ups? (again|every)|remind me (later|tomorrow)|(enable|allow|turn on) notifications/i,
+    "Repeated prompts interrupt the user until they give in.",
+    "Ask once, respect the answer, and offer a clear “Don’t ask again” option."]
+];
+
+function offlineAnalyze(text){
+  var findings = [];
+  RULES.forEach(function(r){
+    var m = text.match(r[1]);
+    if(m){
+      var ev = m[0].trim();
+      if(ev.length > 120) ev = ev.slice(0, 117) + "…";
+      findings.push({ pattern: r[0], evidence: ev, why: r[2], fix: r[3] });
+    }
+  });
+  var score = 0;
+  findings.forEach(function(f){
+    var sev = PATTERNS[f.pattern].sev;
+    score += sev === "high" ? 28 : sev === "medium" ? 18 : 10;
+  });
+  score = Math.min(100, score);
+  return {
+    verdict: findings.length === 0 ? "clean" : (score >= 40 ? "dark_patterns_found" : "suspicious"),
+    risk_score: score,
+    summary: findings.length === 0
+      ? "No dark patterns from the CCPA list were found in this description."
+      : findings.length + " practice" + (findings.length > 1 ? "s" : "") + " from the CCPA 2023 list found in this description.",
+    findings: findings,
+    source: "offline"
+  };
+}
+
+/* ============ AI ANALYSIS ============ */
+function buildPrompt(text){
+  var names = Object.keys(PATTERNS).join(", ");
+  return [
+    {
+      role: "system",
+      content:
+        "You are a consumer-protection analyst for India. A user describes something an app or website did to them. " +
+        "Check the description against the 13 dark patterns listed in the Guidelines for Prevention and Regulation of Dark Patterns, 2023 issued by India’s CCPA. " +
+        "The only allowed pattern names are: " + names + ". " +
+        "Only report a pattern when the description clearly shows it, and quote the exact evidence from the user's words. " +
+        "Reply with ONE JSON object and nothing else (no markdown, no code fences) in exactly this shape: " +
+        "{\"verdict\":\"clean\"|\"suspicious\"|\"dark_patterns_found\",\"risk_score\":0-100,\"summary\":\"one sentence\"," +
+        "\"findings\":[{\"pattern\":\"allowed name\",\"evidence\":\"exact quote\",\"why\":\"one sentence on why it is a dark pattern\",\"fix\":\"one sentence on a fair alternative\"}]}. " +
+        "If nothing is found, return an empty findings array, risk_score 0 and verdict clean. " +
+        "Report at most 4 findings. Keep every evidence, why and fix under 20 words. " +
+        "Your reply must start with { and end with } and contain no other text."
+    },
+    { role: "user", content: "What the app did:\n\"\"\"\n" + text + "\n\"\"\"" }
+  ];
+}
+
+function extractJSON(raw){
+  var s = String(raw || "").replace(/```json|```/gi, "").trim();
+  var a = s.indexOf("{");
+  if(a === -1) throw new Error("replied with text, not JSON");
+  var b = s.lastIndexOf("}");
+  try { return JSON.parse(s.slice(a, b + 1)); } catch(e){}
+  // repair a reply that was cut off: keep the complete findings, then close the array and object
+  var cut = s.lastIndexOf("},");
+  if(cut > a){
+    try { return JSON.parse(s.slice(a, cut + 1) + "]}"); } catch(e){}
+  }
+  throw new Error("returned incomplete JSON");
+}
+
+function normalise(obj){
+  var out = { verdict: obj.verdict, risk_score: Number(obj.risk_score) || 0, summary: obj.summary || "", findings: [], source: "ai" };
+  (Array.isArray(obj.findings) ? obj.findings : []).forEach(function(f){
+    if(f && PATTERNS[f.pattern]){
+      out.findings.push({ pattern: f.pattern, evidence: f.evidence || "", why: f.why || "", fix: f.fix || "" });
+    }
+  });
+  out.risk_score = Math.max(0, Math.min(100, Math.round(out.risk_score)));
+  if(["clean","suspicious","dark_patterns_found"].indexOf(out.verdict) === -1){
+    out.verdict = out.findings.length === 0 ? "clean" : (out.risk_score >= 40 ? "dark_patterns_found" : "suspicious");
+  }
+  return out;
+}
+
+async function callModel(model, text, key){
+  var res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + key,
+      "HTTP-Referer": location.origin || "https://subslash.netlify.app",
+      "X-Title": "SubSlash India"
+    },
+    body: JSON.stringify({ model: model, messages: buildPrompt(text), temperature: 0.1, max_tokens: 1500 })
+  });
+  if(!res.ok){
+    var body = "";
+    try { body = await res.text(); } catch(e){}
+    var err = new Error("HTTP " + res.status + " " + body.slice(0, 160));
+    err.status = res.status;
+    throw err;
+  }
+  var data = await res.json();
+  var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if(!content) throw new Error("empty reply");
+  try {
+    return normalise(extractJSON(content));
+  } catch(e){
+    console.warn("SubSlash: could not parse reply from " + model + ":", content);
+    throw e;
+  }
+}
+
+async function aiAnalyze(text){
+  var key = getKey();
+  if(!key) throw new Error("NO_KEY");
+  var errs = [], lastErr;
+  for(var i = 0; i < MODELS.length; i++){
+    try {
+      return await callModel(MODELS[i], text, key);
+    } catch(e){
+      lastErr = e;
+      errs.push(MODELS[i].split("/").pop() + ": " + String(e.message).slice(0, 90));
+      if(e.status === 401 || e.status === 403) throw e;    // key problem: no point trying other models
+    }
+  }
+  var all = new Error(errs.join("  |  "));
+  all.status = lastErr && lastErr.status;
+  throw all;
+}
+
+/* ============ ANALYSING ANIMATION ============ */
+var loaderTimer = null;
+var LOADER_MSGS = [
+  "Reading what happened…",
+  "Checking all 13 CCPA dark patterns…",
+  "Hunting for hidden fees and pre-ticked boxes…",
+  "Looking for fake urgency and guilt-trips…",
+  "Testing how easy it is to cancel…",
+  "Matching evidence to Annexure 1…",
+  "Writing fairer design suggestions…",
+  "Almost there…"
+];
+
+function startLoader(){
+  stopLoader();
+  var names = Object.keys(PATTERNS);
+  var pills = names.map(function(n){ return '<span class="pill">' + esc(n) + '</span>'; }).join("");
+  $("results").innerHTML =
+    '<div class="card loader" role="status">' +
+      '<div class="msg" id="loaderMsg">' + LOADER_MSGS[0] + '</div>' +
+      '<div class="bar"><span id="loaderBar"></span></div>' +
+      '<div class="pills" id="loaderPills">' + pills + '</div>' +
+      '<p class="tip">Free AI models can take a few seconds. SubSlash is checking every pattern.</p>' +
+    '</div>';
+  $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  var p = 0, tick = 0, lit = 0, msgIdx = 0;
+  var pillEls = document.querySelectorAll("#loaderPills .pill");
+
+  loaderTimer = setInterval(function(){
+    tick++;
+    // progress eases toward 92% and never reaches 100% until results arrive
+    p += (92 - p) * 0.035;
+    var bar = $("loaderBar");
+    if(bar) bar.style.width = p.toFixed(1) + "%";
+
+    // light up one pattern roughly every 0.6s
+    if(tick % 6 === 0){
+      if(lit < pillEls.length){ pillEls[lit].classList.add("on"); lit++; }
+      else { pillEls.forEach(function(el){ el.classList.remove("on"); }); lit = 0; }
+    }
+
+    // change the message roughly every 1.8s
+    if(tick % 18 === 0){
+      msgIdx = Math.min(msgIdx + 1, LOADER_MSGS.length - 1);
+      var m = $("loaderMsg");
+      if(m){
+        m.style.opacity = 0;
+        setTimeout(function(){ m.textContent = LOADER_MSGS[msgIdx]; m.style.opacity = 1; }, 250);
+      }
+    }
+  }, 100);
+}
+
+function stopLoader(){
+  if(loaderTimer){ clearInterval(loaderTimer); loaderTimer = null; }
+}
+
+/* ============ RENDER ============ */
+function render(result, notice){
+  stopLoader();
+  var c = result.risk_score >= 60 ? "var(--red)" : result.risk_score >= 30 ? "var(--amber)" : "var(--green)";
+  var title = result.verdict === "clean" ? "No dark patterns found"
+            : result.verdict === "suspicious" ? "Some warning signs"
+            : "Dark patterns found";
+
+  var html = "";
+  if(notice) html += '<div class="notice">' + esc(notice) + '</div>';
+
+  html += '<div class="card">' +
+            '<div class="verdict">' +
+              '<div class="score" style="--c:' + c + '"><div>' + result.risk_score + '<small>risk / 100</small></div></div>' +
+              '<div><h3>' + esc(title) + '</h3><p>' + esc(result.summary) + '</p></div>' +
+            '</div>' +
+            '<p class="source">Checked by ' + (result.source === "ai" ? "AI model" : "built-in rule check") + '</p>';
+
+  result.findings.forEach(function(f){
+    var p = PATTERNS[f.pattern];
+    html += '<article class="finding" style="--c:' + sevColor(p.sev) + '">' +
+              '<h4>' + esc(f.pattern) + '<span class="ref">CCPA 2023 Annexure 1, item ' + p.n + '</span></h4>' +
+              (f.evidence ? '<blockquote>“' + esc(f.evidence) + '”</blockquote>' : '') +
+              '<p>' + esc(f.why) + '</p>' +
+              '<p class="fix"><strong>Fairer design:</strong> ' + esc(f.fix) + '</p>' +
+            '</article>';
+  });
+
+  html += '</div>';
+  $("results").innerHTML = html;
+  $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ============ MAIN ACTION ============ */
+async function analyze(){
+  var text = $("input").value.trim();
+  var btn = $("analyze");
+
+  if(text.length < 15){
+    $("results").innerHTML = '<div class="notice">Describe what happened in at least a sentence, or tap one of the examples below.</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analyzing…';
+  startLoader();
+
+  try {
+    render(await aiAnalyze(text));
+  } catch(e){
+    var notice;
+    if(e.message === "NO_KEY"){
+      notice = "No API key set, so this result comes from the built-in rule check. Add your OpenRouter key to get the AI analysis.";
+    } else if(e.status === 401 || e.status === 403){
+      notice = "OpenRouter rejected the API key. Showing the built-in rule check instead.";
+    } else if(e.status === 429){
+      notice = "The free AI model is rate-limited right now. Showing the built-in rule check instead; try again in a minute.";
+    } else {
+      notice = "The AI model could not be reached (" + (e.message || "unknown error") + "). Showing the built-in rule check instead.";
+    }
+    console.error("SubSlash AI error:", e);
+    render(offlineAnalyze(text), notice);
+  } finally {
+    stopLoader();
+    btn.disabled = false;
+    btn.textContent = "🔍 Analyze for Dark Patterns";
+  }
+}
+
+/* ============ WIRING ============ */
+document.addEventListener("DOMContentLoaded", function(){
+  $("analyze").addEventListener("click", analyze);
+  $("input").addEventListener("keydown", function(e){
+    if((e.ctrlKey || e.metaKey) && e.key === "Enter") analyze();
+  });
+  document.querySelectorAll("[data-example]").forEach(function(b){
+    b.addEventListener("click", function(){ fillExample(b.getAttribute("data-example")); });
+  });
+
+  // If no key is hard-coded, let the user paste one in the browser instead
+  if(API_KEY.indexOf("PASTE_YOUR_KEY") !== -1){
+    $("keybox").hidden = false;
+    try { $("keyInput").value = localStorage.getItem("subslash_key") || ""; } catch(e){}
+    $("keyInput").addEventListener("change", function(){
+      try { localStorage.setItem("subslash_key", $("keyInput").value.trim()); } catch(e){}
+    });
+  }
+});
+</script>
+</body>
+</html>
