@@ -4,7 +4,7 @@ An AI-powered dark pattern detector for Indian consumers, based on the 13 dark p
 
 Describe what an app or website did to you (a donation added to your cart, a free trial you couldn't cancel, a fee that appeared at the last step) and SubSlash tells you which dark patterns it matches, quotes the evidence, and suggests a fairer design.
 
-**Live demo:** <your Netlify URL>
+**Live demo:** https://dreamy-alpaca-a5d9e7.netlify.app
 
 ## How it works
 
